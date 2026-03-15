@@ -1,0 +1,50 @@
+server:
+  port: 8080
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      nodeRisk:
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 2
+        recordExceptions:
+          - org.springframework.web.reactive.function.client.WebClientResponseException
+          - java.util.concurrent.TimeoutException
+          - java.io.IOException
+          - java.lang.RuntimeException
+
+  retry:
+    instances:
+      nodeRisk:
+        maxAttempts: 3
+        waitDuration: 300ms
+        retryExceptions:
+          - org.springframework.web.reactive.function.client.WebClientResponseException
+          - java.util.concurrent.TimeoutException
+          - java.io.IOException
+          - java.lang.RuntimeException
+
+  timelimiter:
+    instances:
+      nodeRisk:
+        timeoutDuration: 800ms
+        cancelRunningFuture: true
+
+  # ThreadPoolBulkhead: cô lập pool riêng + queue
+  thread-pool-bulkhead:
+    instances:
+      nodeRisk:
+        coreThreadPoolSize: 3
+        maxThreadPoolSize: 3
+        queueCapacity: 5
+        keepAliveDuration: 20s
