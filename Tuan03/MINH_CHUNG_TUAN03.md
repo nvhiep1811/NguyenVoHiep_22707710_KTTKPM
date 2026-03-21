@@ -68,6 +68,24 @@
 
 ## 6) my-cms (Frontend/Backend)
 
+### Mo ta kien truc Microkernel
+
+Du an `my-cms/backend` duoc to chuc theo huong **Microkernel Architecture**:
+
+- **Core (Microkernel):**
+  - `src/kernel.js` dong vai tro nhan trung tam, khoi tao he thong va dieu phoi cac thanh phan.
+  - `src/server.js` boot ung dung, nap kernel va khoi dong HTTP server.
+- **Internal Services (Core Services):**
+  - Cac module trong `src/core/` (vi du: `authService.js`) cung cap nghiep vu cot loi, duoc kernel quan ly.
+- **Plug-in/Extension Layer:**
+  - `src/plugins/` chua cac plugin mo rong tinh nang CMS.
+  - `src/extension/` chua cac extension bo sung hanh vi ma khong can sua code kernel.
+- **Diem mo rong (Extension Points):**
+  - `src/api/registerRoutes.js` la diem dang ky route/module de plugin co the "cam" vao he thong.
+  - Cac controller trong `src/controllers/` xu ly request theo luong da duoc kernel + plugin dang ky.
+
+=> Nhu vay, phan cot loi (kernel + core services) duoc giu gon, on dinh; tinh nang moi duoc them qua plugin/extension, dung tinh chat "mo rong ma khong sua nhan" cua Microkernel.
+
 ### Giao dien
 
 ![UI Dashboard](evidence/my-cms/ui-dashboard.png)
