@@ -1,0 +1,27 @@
+# Environment
+.env
+!.env.example
+
+# Java / Maven
+**/target/
+**/.mvn/wrapper/maven-wrapper.jar
+
+# Node.js
+**/node_modules/
+**/dist/
+
+# Python
+**/__pycache__/
+**/*.pyc
+
+# IDE / Editor
+.vscode/
+**/.idea/
+**/*.iml
+
+# OS files
+**/.DS_Store
+**/Thumbs.db
+
+# Logs
+**/*.log

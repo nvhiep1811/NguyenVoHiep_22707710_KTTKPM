@@ -1,0 +1,19 @@
+spring:
+  application:
+    name: monolithic-app
+  datasource:
+    url: jdbc:sqlserver://localhost:1433;databaseName=mono_db;encrypt=true;trustServerCertificate=true
+    username: sa
+    password: sapassword
+    driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
+
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: true
+    open-in-view: false
+
+app:
+  jwt:
+    secret: ${JWT_SECRET}
+    expiration-seconds: 3600

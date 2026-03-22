@@ -1,0 +1,23 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: auth-service
+
+  datasource:
+    url: jdbc:sqlserver://localhost:1433;databaseName=auth_service_db;encrypt=true;trustServerCertificate=true
+    username: sa
+    password: sapassword
+    driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
+
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: true
+    open-in-view: false
+
+app:
+  jwt:
+    secret: ${JWT_SECRET}
+    expiration-seconds: 3600

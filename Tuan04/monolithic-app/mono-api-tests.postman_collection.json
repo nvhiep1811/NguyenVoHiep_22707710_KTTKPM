@@ -1,0 +1,230 @@
+{
+  "info": {
+    "name": "Monolithic API Tests",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "monoUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "username",
+      "value": "mono_hiep"
+    },
+    {
+      "key": "password",
+      "value": "123456"
+    },
+    {
+      "key": "userId",
+      "value": "3"
+    },
+    {
+      "key": "accessToken",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Register Mono User",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"{{username}}\",\n  \"email\": \"{{username}}@gmail.com\",\n  \"password\": \"{{password}}\",\n  \"profile\": {\n    \"fullName\": \"Mono Hiep\",\n    \"phone\": \"0901111222\",\n    \"address\": \"Ho Chi Minh\",\n    \"dateOfBirth\": \"2003-05-10\",\n    \"avatarUrl\": \"https://example.com/avatar.jpg\"\n  }\n}"
+        },
+        "url": {
+          "raw": "{{monoUrl}}/api/mono/auth/register",
+          "host": [
+            "{{monoUrl}}"
+          ],
+          "path": [
+            "api",
+            "mono",
+            "auth",
+            "register"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status is 201 or 400 (already exists)', function () {",
+              "  pm.expect([201, 400]).to.include(pm.response.code);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Login Mono",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"{{username}}\",\n  \"password\": \"{{password}}\"\n}"
+        },
+        "url": {
+          "raw": "{{monoUrl}}/api/mono/auth/login",
+          "host": [
+            "{{monoUrl}}"
+          ],
+          "path": [
+            "api",
+            "mono",
+            "auth",
+            "login"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status is 200', function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "const data = pm.response.json();",
+              "pm.collectionVariables.set('accessToken', data.accessToken);",
+              "pm.test('Access token exists', function () {",
+              "  pm.expect(data.accessToken).to.be.a('string').and.not.empty;",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Get All Mono Users (JWT required)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{monoUrl}}/api/mono/users",
+          "host": [
+            "{{monoUrl}}"
+          ],
+          "path": [
+            "api",
+            "mono",
+            "users"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status is 200', function () {",
+              "  pm.response.to.have.status(200);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Update Profile (JWT required)",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"profile\": {\n    \"fullName\": \"Mono Hiep Updated\",\n    \"phone\": \"0909999888\",\n    \"address\": \"Da Nang\",\n    \"dateOfBirth\": \"2003-05-10\",\n    \"avatarUrl\": \"https://example.com/avatar-new.jpg\"\n  }\n}"
+        },
+        "url": {
+          "raw": "{{monoUrl}}/api/mono/users/{{userId}}/profile",
+          "host": [
+            "{{monoUrl}}"
+          ],
+          "path": [
+            "api",
+            "mono",
+            "users",
+            "{{userId}}",
+            "profile"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status is 200', function () {",
+              "  pm.response.to.have.status(200);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Unauthorized Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{monoUrl}}/api/mono/users",
+          "host": [
+            "{{monoUrl}}"
+          ],
+          "path": [
+            "api",
+            "mono",
+            "users"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status is 401 without token', function () {",
+              "  pm.response.to.have.status(401);",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
