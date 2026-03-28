@@ -1,0 +1,42 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin, RETAIN_FIRST
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins:
+              - "http://localhost:5173"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowedHeaders:
+              - "*"
+      routes:
+        - id: order-service-route
+          uri: http://order-service:8080
+          predicates:
+            - Path=/api/orders/**
+        - id: payment-service-route
+          uri: http://payment-service:8080
+          predicates:
+            - Path=/api/payments/**
+        - id: shipping-service-route
+          uri: http://shipping-service:8080
+          predicates:
+            - Path=/api/shipments/**
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

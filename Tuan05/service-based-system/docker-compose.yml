@@ -1,0 +1,137 @@
+services:
+  # 1. Database (PostgreSQL)
+  postgres-db:
+    image: postgres:15-alpine
+    container_name: my_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: secretpassword
+      POSTGRES_DB: my_shared_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U root -d my_shared_db"]
+      interval: 3s
+      timeout: 3s
+      retries: 15
+      start_period: 3s
+
+  # 2. Các Backend Services (Spring Boot)
+  order-service:
+    build: ./order-service
+    container_name: order_service
+    restart: unless-stopped
+    ports:
+      - "8081:8080"
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-db:5432/my_shared_db
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=secretpassword
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget -qO- http://localhost:8080/api/orders/health > /dev/null || exit 1",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 15s
+
+  payment-service:
+    build: ./payment-service
+    container_name: payment_service
+    restart: unless-stopped
+    ports:
+      - "8082:8080"
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-db:5432/my_shared_db
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=secretpassword
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget -qO- http://localhost:8080/api/payments/health > /dev/null || exit 1",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 15s
+
+  shipping-service:
+    build: ./shipping-service
+    container_name: shipping_service
+    restart: unless-stopped
+    ports:
+      - "8083:8080"
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-db:5432/my_shared_db
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=secretpassword
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget -qO- http://localhost:8080/api/shipments/health > /dev/null || exit 1",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 15s
+
+  api-gateway:
+    build: ./api-gateway
+    container_name: api_gateway
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    depends_on:
+      order-service:
+        condition: service_healthy
+      payment-service:
+        condition: service_healthy
+      shipping-service:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget -qO- http://localhost:8080/api/gateway/health > /dev/null || exit 1",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 10s
+
+  # 3. Frontend (ReactJS Vite)
+  frontend:
+    build: ./frontend
+    container_name: react_frontend
+    restart: unless-stopped
+    ports:
+      - "5173:80"
+    depends_on:
+      api-gateway:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost/ > /dev/null || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 6
+      start_period: 5s
+
+volumes:
+  pgdata:

@@ -1,0 +1,42 @@
+services:
+  postgres-db:
+    healthcheck:
+      interval: 2s
+      timeout: 2s
+      retries: 12
+      start_period: 2s
+
+  order-service:
+    healthcheck:
+      interval: 3s
+      timeout: 2s
+      retries: 10
+      start_period: 8s
+
+  payment-service:
+    healthcheck:
+      interval: 3s
+      timeout: 2s
+      retries: 10
+      start_period: 8s
+
+  shipping-service:
+    healthcheck:
+      interval: 3s
+      timeout: 2s
+      retries: 10
+      start_period: 8s
+
+  api-gateway:
+    healthcheck:
+      interval: 3s
+      timeout: 2s
+      retries: 10
+      start_period: 6s
+
+  frontend:
+    healthcheck:
+      interval: 3s
+      timeout: 2s
+      retries: 5
+      start_period: 3s
