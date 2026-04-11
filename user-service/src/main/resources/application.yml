@@ -1,0 +1,53 @@
+server:
+  port: ${SERVER_PORT:8081}
+
+spring:
+  config:
+    import: optional:file:.env[.properties]
+  application:
+    name: user-service
+  data:
+    mongodb:
+      uri: ${MONGODB_URI:mongodb://localhost:27017/mini_food_ordering}
+      auto-index-creation: true
+  jackson:
+    default-property-inclusion: non_null
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
+  info:
+    env:
+      enabled: true
+
+info:
+  app:
+    name: ${spring.application.name}
+    description: User Service for Mini Food Ordering System
+    version: 0.0.1-SNAPSHOT
+
+app:
+  instance-id: ${INSTANCE_ID:${spring.application.name}:${server.port}}
+  security:
+    jwt:
+      secret: ${JWT_SECRET:change-this-secret-key-change-this-secret-key}
+      expiration-ms: ${JWT_EXPIRATION_MS:86400000}
+  cors:
+    allowed-origins: ${ALLOWED_ORIGINS:http://localhost:5173,http://localhost:3000}
+    allowed-methods: GET,POST,PUT,PATCH,DELETE,OPTIONS
+    allowed-headers: "*"
+    allow-credentials: true
+  bootstrap:
+    admin:
+      email: ${ADMIN_EMAIL:admin@mini-food.local}
+      password: ${ADMIN_PASSWORD:Admin@12345}
+      full-name: ${ADMIN_FULL_NAME:System Admin}
+
+logging:
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} %-5level [%X{requestId}] [%property{spring.application.name}] [%property{app.instance-id}] %logger{36} - %msg%n"
