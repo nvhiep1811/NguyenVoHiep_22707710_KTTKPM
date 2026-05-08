@@ -1,0 +1,17 @@
+services:
+  mongodb:
+    image: mongo:7
+    container_name: movie-ticket-mongodb
+    ports:
+      - "${MONGO_PORT:-27017}:27017"
+    volumes:
+      - mongo-data:/data/db
+
+  kafka:
+    image: apache/kafka:3.7.2
+    container_name: movie-ticket-kafka
+    ports:
+      - "${KAFKA_PORT:-9092}:9092"
+
+volumes:
+  mongo-data:

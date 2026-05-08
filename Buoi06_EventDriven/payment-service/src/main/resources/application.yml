@@ -1,0 +1,45 @@
+server:
+  port: ${PAYMENT_SERVER_PORT:${SERVER_PORT:8083}}
+
+spring:
+  config:
+    import:
+      - optional:file:.env[.properties]
+      - optional:file:../.env[.properties]
+  application:
+    name: payment-service
+  data:
+    mongodb:
+      uri: ${PAYMENT_MONGODB_URI:${MONGODB_URI:mongodb://localhost:27017/payment_db}}
+      auto-index-creation: true
+  kafka:
+    bootstrap-servers: ${PAYMENT_KAFKA_BOOTSTRAP_SERVERS:${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}}
+    consumer:
+      group-id: ${PAYMENT_KAFKA_CONSUMER_GROUP:${KAFKA_CONSUMER_GROUP:payment-service}}
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        spring.json.add.type.headers: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+app:
+  kafka:
+    topics:
+      booking-created: ${TOPIC_BOOKING_CREATED:BOOKING_CREATED}
+      payment-completed: ${TOPIC_PAYMENT_COMPLETED:PAYMENT_COMPLETED}
+      booking-failed: ${TOPIC_BOOKING_FAILED:BOOKING_FAILED}
+  payment:
+    success-rate: ${PAYMENT_SUCCESS_RATE:0.8}
+    failure-reasons:
+      - Insufficient balance
+      - Payment gateway timeout
+      - Card rejected
