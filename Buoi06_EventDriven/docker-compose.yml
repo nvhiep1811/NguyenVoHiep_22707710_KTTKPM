@@ -2,6 +2,8 @@ services:
   mongodb:
     image: mongo:7
     container_name: movie-ticket-mongodb
+    profiles:
+      - local-mongo
     ports:
       - "${MONGO_PORT:-27017}:27017"
     volumes:
@@ -11,7 +13,122 @@ services:
     image: apache/kafka:3.7.2
     container_name: movie-ticket-kafka
     ports:
-      - "${KAFKA_PORT:-9092}:9092"
+      - "${KAFKA_PORT:-9092}:29092"
+    environment:
+      - KAFKA_NODE_ID=1
+      - KAFKA_PROCESS_ROLES=broker,controller
+      - KAFKA_LISTENERS=INTERNAL://:9092,EXTERNAL://:29092,CONTROLLER://:9093
+      - KAFKA_ADVERTISED_LISTENERS=INTERNAL://kafka:9092,EXTERNAL://${KAFKA_ADVERTISED_HOST:-localhost}:${KAFKA_PORT:-9092}
+      - KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+      - KAFKA_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - KAFKA_CONTROLLER_QUORUM_VOTERS=1@kafka:9093
+      - KAFKA_INTER_BROKER_LISTENER_NAME=INTERNAL
+      - KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1
+      - KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR=1
+      - KAFKA_TRANSACTION_STATE_LOG_MIN_ISR=1
+      - KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS=0
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_BASE: ${VITE_API_BASE:-http://localhost:8080/api}
+    container_name: movie-ticket-frontend
+    ports:
+      - "${FRONTEND_HOST_PORT:-3000}:80"
+    environment:
+      - VITE_API_BASE=${VITE_API_BASE:-http://localhost:8080/api}
+
+  api-gateway:
+    build: ./gateway-service
+    container_name: movie-ticket-api-gateway
+    ports:
+      - "${GATEWAY_HOST_PORT:-8080}:${GATEWAY_SERVER_PORT:-8080}"
+    environment:
+      GATEWAY_SERVER_PORT: ${GATEWAY_SERVER_PORT:-8080}
+      USER_SERVICE_URI: ${USER_SERVICE_URI:-http://user-service:8081}
+      MOVIE_SERVICE_URI: ${MOVIE_SERVICE_URI:-http://movie-service:8082}
+      BOOKING_SERVICE_URI: ${BOOKING_SERVICE_URI:-http://booking-service:8085}
+      PAYMENT_SERVICE_URI: ${PAYMENT_SERVICE_URI:-http://payment-service:8083}
+      NOTIFICATION_SERVICE_URI: ${NOTIFICATION_SERVICE_URI:-http://notification-service:8084}
+      FRONTEND_URI: ${FRONTEND_URI:-http://frontend:80}
+      CORS_ALLOWED_ORIGIN_PATTERNS: ${CORS_ALLOWED_ORIGIN_PATTERNS:-http://localhost:3000,http://localhost:8080,http://localhost:5173,http://localhost:4173,http://127.0.0.1:3000,http://127.0.0.1:8080,http://127.0.0.1:5173,http://127.0.0.1:4173}
+    depends_on:
+      - frontend
+      - user-service
+      - movie-service
+      - booking-service
+      - payment-service
+      - notification-service
+
+  user-service:
+    build: ./user-service
+    container_name: movie-ticket-user
+    depends_on:
+      - kafka
+    ports:
+      - "${USER_HOST_PORT:-18081}:${USER_SERVER_PORT:-8081}"
+    environment:
+      USER_SERVER_PORT: ${USER_SERVER_PORT:-8081}
+      USER_MONGODB_URI: "mongodb+srv://${MONGO_ATLAS_USERNAME}:${MONGO_ATLAS_PASSWORD}@${MONGO_ATLAS_CLUSTER}/user_db?retryWrites=true&w=majority&appName=${MONGO_ATLAS_APP_NAME}"
+      KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS:-kafka:9092}
+      USER_KAFKA_BOOTSTRAP_SERVERS: ${USER_KAFKA_BOOTSTRAP_SERVERS:-kafka:9092}
+      CORS_ALLOWED_ORIGIN_PATTERNS: ${CORS_ALLOWED_ORIGIN_PATTERNS:-http://localhost:3000,http://localhost:8080,http://localhost:5173,http://localhost:4173,http://127.0.0.1:3000,http://127.0.0.1:8080,http://127.0.0.1:5173,http://127.0.0.1:4173}
+
+  movie-service:
+    build: ./movie-service
+    container_name: movie-ticket-movie
+    depends_on:
+      - kafka
+    ports:
+      - "${MOVIE_HOST_PORT:-18082}:${MOVIE_SERVER_PORT:-8082}"
+    environment:
+      MOVIE_SERVER_PORT: ${MOVIE_SERVER_PORT:-8082}
+      MOVIE_MONGODB_URI: "mongodb+srv://${MONGO_ATLAS_USERNAME}:${MONGO_ATLAS_PASSWORD}@${MONGO_ATLAS_CLUSTER}/movie_db?retryWrites=true&w=majority&appName=${MONGO_ATLAS_APP_NAME}"
+      KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS:-kafka:9092}
+      MOVIE_KAFKA_BOOTSTRAP_SERVERS: ${MOVIE_KAFKA_BOOTSTRAP_SERVERS:-kafka:9092}
+      CORS_ALLOWED_ORIGIN_PATTERNS: ${CORS_ALLOWED_ORIGIN_PATTERNS:-http://localhost:3000,http://localhost:8080,http://localhost:5173,http://localhost:4173,http://127.0.0.1:3000,http://127.0.0.1:8080,http://127.0.0.1:5173,http://127.0.0.1:4173}
+
+  payment-service:
+    build: ./payment-service
+    container_name: movie-ticket-payment
+    depends_on:
+      - kafka
+    ports:
+      - "${PAYMENT_HOST_PORT:-18083}:${PAYMENT_SERVER_PORT:-8083}"
+    environment:
+      PAYMENT_SERVER_PORT: ${PAYMENT_SERVER_PORT:-8083}
+      PAYMENT_MONGODB_URI: "mongodb+srv://${MONGO_ATLAS_USERNAME}:${MONGO_ATLAS_PASSWORD}@${MONGO_ATLAS_CLUSTER}/payment_db?retryWrites=true&w=majority&appName=${MONGO_ATLAS_APP_NAME}"
+      KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS:-kafka:9092}
+      PAYMENT_KAFKA_BOOTSTRAP_SERVERS: ${PAYMENT_KAFKA_BOOTSTRAP_SERVERS:-kafka:9092}
+      CORS_ALLOWED_ORIGIN_PATTERNS: ${CORS_ALLOWED_ORIGIN_PATTERNS:-http://localhost:3000,http://localhost:8080,http://localhost:5173,http://localhost:4173,http://127.0.0.1:3000,http://127.0.0.1:8080,http://127.0.0.1:5173,http://127.0.0.1:4173}
+
+  notification-service:
+    build: ./notification-service
+    container_name: movie-ticket-notification
+    depends_on:
+      - kafka
+    ports:
+      - "${NOTIFICATION_HOST_PORT:-18084}:${NOTIFICATION_SERVER_PORT:-8084}"
+    environment:
+      NOTIFICATION_SERVER_PORT: ${NOTIFICATION_SERVER_PORT:-8084}
+      NOTIFICATION_MONGODB_URI: "mongodb+srv://${MONGO_ATLAS_USERNAME}:${MONGO_ATLAS_PASSWORD}@${MONGO_ATLAS_CLUSTER}/notification_db?retryWrites=true&w=majority&appName=${MONGO_ATLAS_APP_NAME}"
+      KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS:-kafka:9092}
+      NOTIFICATION_KAFKA_BOOTSTRAP_SERVERS: ${NOTIFICATION_KAFKA_BOOTSTRAP_SERVERS:-kafka:9092}
+      CORS_ALLOWED_ORIGIN_PATTERNS: ${CORS_ALLOWED_ORIGIN_PATTERNS:-http://localhost:3000,http://localhost:8080,http://localhost:5173,http://localhost:4173,http://127.0.0.1:3000,http://127.0.0.1:8080,http://127.0.0.1:5173,http://127.0.0.1:4173}
+
+  booking-service:
+    build: ./booking-service
+    container_name: movie-ticket-booking
+    depends_on:
+      - kafka
+    ports:
+      - "${BOOKING_HOST_PORT:-18085}:${BOOKING_SERVER_PORT:-8085}"
+    environment:
+      BOOKING_SERVER_PORT: ${BOOKING_SERVER_PORT:-8085}
+      BOOKING_MONGODB_URI: "mongodb+srv://${MONGO_ATLAS_USERNAME}:${MONGO_ATLAS_PASSWORD}@${MONGO_ATLAS_CLUSTER}/booking_db?retryWrites=true&w=majority&appName=${MONGO_ATLAS_APP_NAME}"
+      KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS:-kafka:9092}
+      BOOKING_KAFKA_BOOTSTRAP_SERVERS: ${BOOKING_KAFKA_BOOTSTRAP_SERVERS:-kafka:9092}
+      CORS_ALLOWED_ORIGIN_PATTERNS: ${CORS_ALLOWED_ORIGIN_PATTERNS:-http://localhost:3000,http://localhost:8080,http://localhost:5173,http://localhost:4173,http://127.0.0.1:3000,http://127.0.0.1:8080,http://127.0.0.1:5173,http://127.0.0.1:4173}
 
 volumes:
   mongo-data:

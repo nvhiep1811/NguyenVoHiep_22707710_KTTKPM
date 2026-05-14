@@ -1,0 +1,44 @@
+server:
+  port: ${BOOKING_SERVER_PORT:${SERVER_PORT:8085}}
+
+spring:
+  config:
+    import:
+      - optional:file:.env[.properties]
+      - optional:file:../.env[.properties]
+  application:
+    name: booking-service
+  data:
+    mongodb:
+      uri: ${BOOKING_MONGODB_URI:${MONGODB_URI:mongodb://localhost:27017/booking_db}}
+      auto-index-creation: true
+  kafka:
+    bootstrap-servers: ${BOOKING_KAFKA_BOOTSTRAP_SERVERS:${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}}
+    consumer:
+      group-id: ${BOOKING_KAFKA_CONSUMER_GROUP:${KAFKA_CONSUMER_GROUP:booking-service}}
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        spring.json.add.type.headers: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+app:
+  cors:
+    allowed-origin-patterns: ${CORS_ALLOWED_ORIGIN_PATTERNS:http://localhost:3000,http://localhost:8080,http://localhost:5173,http://localhost:4173,http://127.0.0.1:3000,http://127.0.0.1:8080,http://127.0.0.1:5173,http://127.0.0.1:4173}
+  kafka:
+    retry:
+      max-attempts: ${KAFKA_RETRY_MAX_ATTEMPTS:3}
+      backoff-ms: ${KAFKA_RETRY_BACKOFF_MS:1000}
+    topics:
+      booking-created: ${TOPIC_BOOKING_CREATED:BOOKING_CREATED}
+      payment-completed: ${TOPIC_PAYMENT_COMPLETED:PAYMENT_COMPLETED}
+      booking-failed: ${TOPIC_BOOKING_FAILED:BOOKING_FAILED}

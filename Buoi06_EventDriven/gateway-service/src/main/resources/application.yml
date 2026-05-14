@@ -1,0 +1,53 @@
+server:
+  port: ${GATEWAY_SERVER_PORT:${SERVER_PORT:8080}}
+
+spring:
+  application:
+    name: gateway-service
+  cloud:
+    gateway:
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOriginPatterns: ${CORS_ALLOWED_ORIGIN_PATTERNS:http://localhost:3000,http://localhost:8080,http://localhost:5173,http://localhost:4173,http://127.0.0.1:3000,http://127.0.0.1:8080,http://127.0.0.1:5173,http://127.0.0.1:4173}
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - PATCH
+              - DELETE
+              - OPTIONS
+            allowedHeaders: "*"
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Credentials Access-Control-Allow-Origin
+      routes:
+        - id: user-service
+          uri: ${USER_SERVICE_URI:http://user-service:8081}
+          predicates:
+            - Path=/api/users/**
+        - id: movie-service
+          uri: ${MOVIE_SERVICE_URI:http://movie-service:8082}
+          predicates:
+            - Path=/api/movies/**
+        - id: booking-service
+          uri: ${BOOKING_SERVICE_URI:http://booking-service:8085}
+          predicates:
+            - Path=/api/bookings/**
+        - id: payment-service
+          uri: ${PAYMENT_SERVICE_URI:http://payment-service:8083}
+          predicates:
+            - Path=/api/payments/**
+        - id: notification-service
+          uri: ${NOTIFICATION_SERVICE_URI:http://notification-service:8084}
+          predicates:
+            - Path=/api/notifications/**,/api/events/**
+        - id: frontend
+          uri: ${FRONTEND_URI:http://frontend:80}
+          predicates:
+            - Path=/**
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway

@@ -10,6 +10,8 @@ public record BookingCreatedEvent(
         @NotBlank String bookingId,
         @NotBlank String userId,
         String movieId,
+        String showTimeId,
+        Integer seats,
         @NotNull @Positive @JsonAlias("amount") BigDecimal totalPrice,
         String movieTitle) {
 }

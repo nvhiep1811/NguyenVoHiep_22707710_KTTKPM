@@ -1,6 +1,7 @@
 package com.kttkpm.paymentservice.service;
 
 import com.kttkpm.paymentservice.domain.Payment;
+import com.kttkpm.paymentservice.dto.BookingCreatedEvent;
 import com.kttkpm.paymentservice.dto.BookingFailedEvent;
 import com.kttkpm.paymentservice.dto.DomainEvent;
 import com.kttkpm.paymentservice.dto.PaymentCompletedEvent;
@@ -34,18 +35,31 @@ public class PaymentEventPublisher {
                 "PAYMENT_COMPLETED",
                 "payment-service",
                 payload);
-        kafkaTemplate.send(paymentCompletedTopic, payment.getBookingId(), event);
+                try {
+                        new com.kttkpm.paymentservice.config.ResilientKafkaPublisher(kafkaTemplate)
+                                        .publishWithRetry(paymentCompletedTopic, payment.getBookingId(), event);
+                } catch (Exception e) {
+                        // ignore
+                }
     }
 
-    public void publishBookingFailed(Payment payment) {
+    public void publishBookingFailed(Payment payment, BookingCreatedEvent bookingCreatedEvent) {
         BookingFailedEvent payload = new BookingFailedEvent(
                 payment.getBookingId(),
                 payment.getUserId(),
+                bookingCreatedEvent.movieId(),
+                bookingCreatedEvent.showTimeId(),
+                bookingCreatedEvent.seats(),
                 payment.getFailReason());
         DomainEvent<BookingFailedEvent> event = DomainEvent.published(
                 "BOOKING_FAILED",
                 "payment-service",
                 payload);
-        kafkaTemplate.send(bookingFailedTopic, payment.getBookingId(), event);
+                try {
+                        new com.kttkpm.paymentservice.config.ResilientKafkaPublisher(kafkaTemplate)
+                                        .publishWithRetry(bookingFailedTopic, payment.getBookingId(), event);
+                } catch (Exception e) {
+                        // ignore
+                }
     }
 }

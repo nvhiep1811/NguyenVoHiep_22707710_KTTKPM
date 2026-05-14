@@ -10,8 +10,23 @@ import org.springframework.kafka.config.TopicBuilder;
 public class KafkaTopicConfig {
 
     @Bean
+    NewTopic userRegisteredTopic(@Value("${app.kafka.topics.user-registered}") String topic) {
+        return TopicBuilder.name(topic).partitions(1).replicas(1).build();
+    }
+
+    @Bean
+    NewTopic userRegisteredDlq(@Value("${app.kafka.topics.user-registered}") String topic) {
+        return TopicBuilder.name(topic + ".DLQ").partitions(1).replicas(1).build();
+    }
+
+    @Bean
     NewTopic bookingCreatedTopic(@Value("${app.kafka.topics.booking-created}") String topic) {
         return TopicBuilder.name(topic).partitions(1).replicas(1).build();
+    }
+
+    @Bean
+    NewTopic bookingCreatedDlq(@Value("${app.kafka.topics.booking-created}") String topic) {
+        return TopicBuilder.name(topic + ".DLQ").partitions(1).replicas(1).build();
     }
 
     @Bean
@@ -20,7 +35,17 @@ public class KafkaTopicConfig {
     }
 
     @Bean
+    NewTopic paymentCompletedDlq(@Value("${app.kafka.topics.payment-completed}") String topic) {
+        return TopicBuilder.name(topic + ".DLQ").partitions(1).replicas(1).build();
+    }
+
+    @Bean
     NewTopic bookingFailedTopic(@Value("${app.kafka.topics.booking-failed}") String topic) {
         return TopicBuilder.name(topic).partitions(1).replicas(1).build();
+    }
+
+    @Bean
+    NewTopic bookingFailedDlq(@Value("${app.kafka.topics.booking-failed}") String topic) {
+        return TopicBuilder.name(topic + ".DLQ").partitions(1).replicas(1).build();
     }
 }

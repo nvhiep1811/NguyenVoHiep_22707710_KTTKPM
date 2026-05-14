@@ -39,13 +39,9 @@ public class PaymentProcessorService {
     }
 
     @KafkaListener(topics = "${app.kafka.topics.booking-created}", groupId = "${spring.kafka.consumer.group-id}")
-    public void consumeBookingCreated(String payload) {
-        try {
-            BookingCreatedEvent event = readBookingCreatedEvent(payload);
-            process(event);
-        } catch (Exception ex) {
-            log.error("Cannot process BOOKING_CREATED payload: {}", payload, ex);
-        }
+    public void consumeBookingCreated(String payload) throws Exception {
+        BookingCreatedEvent event = readBookingCreatedEvent(payload);
+        process(event);
     }
 
     public Payment process(BookingCreatedEvent event) {
@@ -72,7 +68,7 @@ public class PaymentProcessorService {
             payment.setFailReason(randomFailureReason());
             payment.setProcessedAt(Instant.now());
             Payment savedPayment = paymentRepository.save(payment);
-            paymentEventPublisher.publishBookingFailed(savedPayment);
+            paymentEventPublisher.publishBookingFailed(savedPayment, event);
             log.info("Payment failed for bookingId={}, reason={}", savedPayment.getBookingId(), savedPayment.getFailReason());
             return savedPayment;
         } catch (DuplicateKeyException ex) {

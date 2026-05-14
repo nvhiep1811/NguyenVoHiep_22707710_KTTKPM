@@ -1,0 +1,39 @@
+server:
+  port: ${USER_SERVER_PORT:${SERVER_PORT:8081}}
+
+spring:
+  config:
+    import:
+      - optional:file:.env[.properties]
+      - optional:file:../.env[.properties]
+  application:
+    name: user-service
+  data:
+    mongodb:
+      uri: ${USER_MONGODB_URI:${MONGODB_URI:mongodb://localhost:27017/user_db}}
+      auto-index-creation: true
+  kafka:
+    bootstrap-servers: ${USER_KAFKA_BOOTSTRAP_SERVERS:${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}}
+    consumer:
+      group-id: ${USER_KAFKA_CONSUMER_GROUP:${KAFKA_CONSUMER_GROUP:user-service}}
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        spring.json.add.type.headers: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+app:
+  cors:
+    allowed-origin-patterns: ${CORS_ALLOWED_ORIGIN_PATTERNS:http://localhost:3000,http://localhost:8080,http://localhost:5173,http://localhost:4173,http://127.0.0.1:3000,http://127.0.0.1:8080,http://127.0.0.1:5173,http://127.0.0.1:4173}
+  kafka:
+    topics:
+      user-registered: ${TOPIC_USER_REGISTERED:USER_REGISTERED}

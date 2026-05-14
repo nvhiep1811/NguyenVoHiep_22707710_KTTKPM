@@ -1,4 +1,6 @@
 target/
+.m2/
+node_modules/
 .idea/
 .vscode/
 *.iml
