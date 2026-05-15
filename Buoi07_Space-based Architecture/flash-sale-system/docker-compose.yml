@@ -1,0 +1,120 @@
+version: '3.8'
+
+services:
+  # ==================== Infrastructure ====================
+  # MongoDB: Sử dụng MongoDB Atlas (cloud) thay vì local
+  # Connection string được cấu hình trong biến môi trường SPRING_DATA_MONGODB_URI
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: flash-sale-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis-data:/data
+    networks:
+      - flash-sale-network
+
+  # ==================== Backend Services ====================
+  sync-worker:
+    build:
+      context: ./backend/sync-worker
+      dockerfile: Dockerfile
+    container_name: sync-worker
+    ports:
+      - "8085:8085"
+    environment:
+      SPRING_DATA_MONGODB_URI: ${MONGODB_ATLAS_URI:-mongodb+srv://<username>:<password>@<cluster>.mongodb.net/flash_sale_db?retryWrites=true&w=majority}
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+    depends_on:
+      - redis
+    networks:
+      - flash-sale-network
+
+  product-pu:
+    build:
+      context: ./backend/product-pu
+      dockerfile: Dockerfile
+    container_name: product-pu
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+    depends_on:
+      - redis
+      - sync-worker
+    networks:
+      - flash-sale-network
+
+  cart-pu:
+    build:
+      context: ./backend/cart-pu
+      dockerfile: Dockerfile
+    container_name: cart-pu
+    ports:
+      - "8082:8082"
+    environment:
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+    depends_on:
+      - redis
+    networks:
+      - flash-sale-network
+
+  order-pu:
+    build:
+      context: ./backend/order-pu
+      dockerfile: Dockerfile
+    container_name: order-pu
+    ports:
+      - "8083:8083"
+    environment:
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      INVENTORY_SERVICE_URL: http://inventory-pu:8084
+    depends_on:
+      - redis
+      - inventory-pu
+    networks:
+      - flash-sale-network
+
+  inventory-pu:
+    build:
+      context: ./backend/inventory-pu
+      dockerfile: Dockerfile
+    container_name: inventory-pu
+    ports:
+      - "8084:8084"
+    environment:
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+    depends_on:
+      - redis
+    networks:
+      - flash-sale-network
+
+  # ==================== Frontend ====================
+  frontend:
+    build:
+      context: ./frontend/flash-sale-ui
+      dockerfile: Dockerfile
+    container_name: flash-sale-ui
+    ports:
+      - "3000:80"
+    depends_on:
+      - product-pu
+      - cart-pu
+      - order-pu
+      - inventory-pu
+    networks:
+      - flash-sale-network
+
+volumes:
+  redis-data:
+
+networks:
+  flash-sale-network:
+    driver: bridge

@@ -1,0 +1,34 @@
+# Environment
+.env
+!.env.example
+
+# Java / Maven
+**/target/
+*.class
+*.jar
+*.war
+*.ear
+*.log
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+.project
+.classpath
+.settings/
+
+# Node
+**/node_modules/
+**/dist/
+*.tgz
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Docker
+docker-compose.override.yml

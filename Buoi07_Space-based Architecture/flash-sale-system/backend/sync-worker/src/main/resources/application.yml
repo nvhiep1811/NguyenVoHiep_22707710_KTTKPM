@@ -1,0 +1,22 @@
+server:
+  port: 8085
+
+spring:
+  application:
+    name: sync-worker
+  config:
+    import: optional:file:../../.env[.properties]
+  data:
+    mongodb:
+      # Đọc từ biến môi trường MONGODB_ATLAS_URI
+      # Đặt giá trị trong file .env hoặc system environment
+      uri: ${MONGODB_ATLAS_URI}
+      auto-index-creation: true
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      timeout: 5000
+
+logging:
+  level:
+    com.flashsale.sync: INFO
