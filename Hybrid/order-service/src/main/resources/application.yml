@@ -1,0 +1,18 @@
+server:
+  address: ${SERVER_ADDRESS:0.0.0.0}
+  port: ${SERVER_PORT:8082}
+
+spring:
+  config:
+    import: optional:file:.env[.properties]
+  application:
+    name: order-service
+  data:
+    mongodb:
+      uri: ${ORDER_MONGODB_URI:mongodb+srv://USER:PASS@CLUSTER/food_delivery_order_db?retryWrites=true&w=majority}
+      auto-index-creation: true
+  rabbitmq:
+    host: ${RABBITMQ_HOST:192.168.1.100}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:admin}
+    password: ${RABBITMQ_PASSWORD:admin123}
